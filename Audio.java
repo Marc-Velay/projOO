@@ -7,8 +7,8 @@ public class Audio {
     int loanLength;
     double loanFare;
 
-    public Audio() {
-        this.category = "";
+    public Audio(String category) {
+        this.category = category;
         this.loanLength = 28;
         this.loanFare = 1.0;
     }

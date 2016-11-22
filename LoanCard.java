@@ -14,6 +14,7 @@ public class LoanCard {
         cal.add(Calendar.MONTH, 1);
         this.loanDate = new Date();
         this.loanEnd = cal.getTime();
+        cal.add(Calendar.DAY, -7);
         this.loanReminderDate = cal.getTime();
         this.overdue = false;
         this.fare = false;

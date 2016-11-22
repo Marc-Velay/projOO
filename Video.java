@@ -8,9 +8,9 @@ public class Video {
     int loanLength;
     double loanFare;
 
-    public Video() {
-        this.videoLength = 0;
-        this.legalMentions = "";
+    public Video(int videoLength, String legalMentions) {
+        this.videoLength = videoLength;
+        this.legalMentions = legalMentions;
         this.loanLength = 14;
         this.loanFare = 1.5;
     }

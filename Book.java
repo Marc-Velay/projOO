@@ -7,8 +7,8 @@ public class Book {
     int loanLength;
     double loanFare;
 
-    public Book() {
-        this.nbPage = 0;
+    public Book(int nbPage) {
+        this.nbPage = nbPage;
         this.loanLength = 42;
         this.loanFare = 0.5;   
     }
