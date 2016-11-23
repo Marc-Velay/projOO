@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
+import java.sql.*;
 
 public class Library implements ActionListener {
 
@@ -11,18 +12,44 @@ public class Library implements ActionListener {
     JTextArea testInput;
     JButton addDocBtn;
     JButton checkoutDocBtn;
-    JButton createUser;
-    JButton login;
+    JButton createUserBtn;
+    JButton loginBtn;
 
     JButton saveBook;
 
     JButton checkout;
+
+    JButton createUser;
+
+    JButton login;
     
     JFrame frame;
     JFrame newDocframe;
     JFrame checkoutFrame;
+    JFrame createUserFrame;
+    JFrame loginFrame;
 
-    public Library(String name) {
+    private static final String dbClassName = "com.mysql.jdbc.Driver";
+    private static final String CONNECTION = "jdbc:mysql://127.0.0.1/bookLibrary";
+
+    public Library(String name) throws ClassNotFoundException,SQLException{
+
+        System.out.println("mained");
+        Class.forName(dbClassName);
+        System.out.println("class created");
+
+    // Properties for user and password. Here the user and password are both 'paulr'
+    Properties p = new Properties();
+    p.put("user","system");
+    p.put("password","Wb7L2sryi!");
+
+    // Now try to connect
+    Connection c = DriverManager.getConnection(CONNECTION,p);
+
+    System.out.println("It works !");
+    c.close();
+
+
         this.name = name;
         frame = new JFrame(this.name);
         frame.setMinimumSize(new Dimension(640,480));
@@ -45,21 +72,21 @@ public class Library implements ActionListener {
         checkoutDocBtn.setActionCommand("chkoutDoc");
         checkoutDocBtn.addActionListener(this);
 
-        createUser = new JButton("Create a new user");
-        createUser.setMinimumSize(new Dimension(60, 50));
-        createUser.setActionCommand("createUser");
-        createUser.addActionListener(this);
+        createUserBtn = new JButton("Create a new user");
+        createUserBtn.setMinimumSize(new Dimension(60, 50));
+        createUserBtn.setActionCommand("createUserBtn");
+        createUserBtn.addActionListener(this);
 
-        login = new JButton("login");
-        login.setMinimumSize(new Dimension(60, 50));
-        login.setActionCommand("login");
-        login.addActionListener(this);
+        loginBtn = new JButton("login");
+        loginBtn.setMinimumSize(new Dimension(60, 50));
+        loginBtn.setActionCommand("loginBtn");
+        loginBtn.addActionListener(this);
 
         toolBar.add(testInput);
         toolBar.add(addDocBtn);
         toolBar.add(checkoutDocBtn);
-        toolBar.add(createUser);
-        toolBar.add(login);
+        toolBar.add(createUserBtn);
+        toolBar.add(loginBtn);
 
         frame.add(toolBar);
         System.out.println("created lib");
@@ -83,13 +110,13 @@ public class Library implements ActionListener {
                         //Document newDoc = new Document(frame);
                 break;
 
-            case "createUser":                            
+            case "createUserBtn":                            
                         frame.setVisible(false);
                         createUser();
                         //Document newDoc = new Document(frame);
                 break;
 
-            case "login":                            
+            case "loginBtn":                            
                         frame.setVisible(false);
                         login();
                         //Document newDoc = new Document(frame);
@@ -103,6 +130,16 @@ public class Library implements ActionListener {
             case "checkout":
                         checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
                         System.out.println("checked out doc");
+                break;
+
+            case "createUser":
+                        createUserFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        System.out.println("created user");
+                break;
+
+            case "login":
+                        loginFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        System.out.println("login");
                 break;
         } 
     }
@@ -166,14 +203,72 @@ public class Library implements ActionListener {
     }
 
     public void createUser() {
+        createUserFrame = new JFrame("Document Creation");
+        createUserFrame.setMinimumSize(new Dimension(640,480));
+        createUserFrame.setLayout(new BorderLayout());
 
+        JPanel getDocInfo = new JPanel();
+        getDocInfo.setMinimumSize(new Dimension(640, 480));
+
+        createUser = new JButton("create account");
+        createUser.setMinimumSize(new Dimension(60, 50));
+        createUser.setActionCommand("createUser");
+        createUser.addActionListener(this);
+
+        getDocInfo.add(createUser);
+
+        createUserFrame.add(getDocInfo);
+        createUserFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        createUserFrame.pack();
+        createUserFrame.setVisible(true);
+
+        createUserFrame.addWindowListener( new WindowAdapter() {
+            public void windowClosing(WindowEvent e)
+            {
+                frame.setVisible(true);
+                frame.repaint();
+                createUserFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        }});
     }
 
     public void login() {
-        
+        loginFrame = new JFrame("Document Creation");
+        loginFrame.setMinimumSize(new Dimension(640,480));
+        loginFrame.setLayout(new BorderLayout());
+
+        JPanel getDocInfo = new JPanel();
+        getDocInfo.setMinimumSize(new Dimension(640, 480));
+
+        login = new JButton("Login");
+        login.setMinimumSize(new Dimension(60, 50));
+        login.setActionCommand("login");
+        login.addActionListener(this);
+
+        getDocInfo.add(login);
+
+        loginFrame.add(getDocInfo);
+        loginFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        loginFrame.pack();
+        loginFrame.setVisible(true);
+
+        loginFrame.addWindowListener( new WindowAdapter() {
+            public void windowClosing(WindowEvent e)
+            {
+                frame.setVisible(true);
+                frame.repaint();
+                loginFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        }});
     }
 
     public static void main(String[] args){
-        Library library = new Library("Library");
+        try {
+            try {
+            Library library = new Library("Library");
+            } catch (ClassNotFoundException e) {
+                System.out.println(e.getMessage() + "exception class");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage() + "exception sql");
+        }
     }
 }
