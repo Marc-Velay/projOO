@@ -11,6 +11,7 @@ public class Client {
     int nbLoanOverdue;
     int nbLoanOpen;
     int reductionCode;
+    int userID;
 
     public Client(String lastName,  String name, String address) {
         this.lastName = lastName;

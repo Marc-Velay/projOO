@@ -8,6 +8,9 @@ public class LoanCard {
     Date loanReminderDate;
     boolean overdue;
     double fare;
+    int loanID;
+    int userID;
+    int docID;
 
     public LoanCard() {
         Calendar cal = Calendar.getInstance();

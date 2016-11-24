@@ -29,25 +29,92 @@ public class Library implements ActionListener {
     JFrame createUserFrame;
     JFrame loginFrame;
 
-    private static final String dbClassName = "com.mysql.jdbc.Driver";
-    private static final String CONNECTION = "jdbc:mysql://127.0.0.1/bookLibrary";
+    private static final String dbClassName = "org.sqlite.JDBC";
+    private static final String LOANLIB = "jdbc:sqlite:loanLibrary.db";
+    private static final String USERLIB = "jdbc:sqlite:userLibrary.db";
+    private static final String DOCLIB = "jdbc:sqlite:documentLibrary.db";
+    private Connection connLoan = null;
+    private Connection connUser = null;
+    private Connection connDoc = null;
 
     public Library(String name) throws ClassNotFoundException,SQLException{
+        Properties p = new Properties();
+        p.put("user","system");
+        p.put("password","Wb7L2sryi!");
+        String sql =null;
+        try {
+            Class.forName(dbClassName).newInstance();
+            try {
+                connLoan = DriverManager.getConnection(LOANLIB);
+                Statement statement = connLoan.createStatement();
+                sql = "CREATE TABLE loanLibrary "+
+                " ( userID INTEGER, "+
+                " docID INTEGER, "+
+                " loanDate INTEGER, "+
+                " loanEnd INTEGER, "+
+                " loanReminderDate INTEGER, "+
+                " overdue boolean, "+
+                " fare float )";
+                statement.executeUpdate(sql);
+                statement.close();
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+            try {
+                connUser = DriverManager.getConnection(USERLIB);
+                Statement statement = connUser.createStatement();
+                sql = " CREATE TABLE userLibrary " +
+                " ( lastname VARCHAR(255), " + 
+                " name VARCHAR(255), " +
+                " address VARCHAR(255), " + 
+                " inscriptiondate INTEGER, "+
+                " renewaldate INTEGER, "+
+                " nbLoanfinished INTEGER, "+
+                " nbLoanoverdue INTEGER, "+
+                " nbLoanopen INTEGER,"+ 
+                " reductioncode INTEGER )";
+                statement.executeUpdate(sql);
+                statement.close();
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+            try {
+                connDoc = DriverManager.getConnection(DOCLIB);
+                Statement statement = connDoc.createStatement();
+                sql = "CREATE TABLE documentLibrary "+
+                "(code VARCHAR (255), "+
+                "author VARCHAR (255), "+
+                "title VARCHAR (255), "+
+                "year INTEGER, "+
+                "borrowable boolean, "+
+                "loaned boolean, "+
+                "nbLoans INTEGER)";
+                statement.executeUpdate(sql);
+                statement.close();
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+        } catch (Exception ex) {
+            System.out.println(ex);
+        }
 
-        System.out.println("mained");
-        Class.forName(dbClassName);
-        System.out.println("class created");
+    Connection c = DriverManager.getConnection(LOANLIB,p);
+    System.out.println("created first co");
+    Connection c2 = DriverManager.getConnection(USERLIB,p);
+    System.out.println("created second co");
+    Connection c3 = DriverManager.getConnection(DOCLIB,p);
+    System.out.println("created third co");
 
-    // Properties for user and password. Here the user and password are both 'paulr'
-    Properties p = new Properties();
-    p.put("user","system");
-    p.put("password","Wb7L2sryi!");
-
-    // Now try to connect
-    Connection c = DriverManager.getConnection(CONNECTION,p);
-
-    System.out.println("It works !");
+    System.out.println("It works! Access to DBs done");
     c.close();
+    c2.close();
+    c3.close();
 
 
         this.name = name;

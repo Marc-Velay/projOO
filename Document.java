@@ -14,14 +14,14 @@ public class Document implements ActionListener{
     boolean loaned;
     int nbLoans;
 
-    public Document() {
-        /*this.code = code;
+    public Document(String code, String author, String title, int year) {
+        this.code = code;
         this.author = author;
         this.title = title;
         this.year = year;
         this.borrowable = true;
         this.loaned = false;
-        this.nbLoans = 0;*/
+        this.nbLoans = 0;
         
 
         System.out.println("New document created");
