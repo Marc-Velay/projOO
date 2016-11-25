@@ -8,20 +8,17 @@ import java.sql.*;
 public class Library implements ActionListener {
 
     String name;
-    
+    Dimension winDim;
     JTextArea testInput;
     JButton addDocBtn;
     JButton checkoutDocBtn;
     JButton createUserBtn;
-    JButton loginBtn;
 
     JButton saveBook;
 
     JButton checkout;
 
     JButton createUser;
-
-    JButton login;
     
     JFrame frame;
     JFrame newDocframe;
@@ -30,42 +27,42 @@ public class Library implements ActionListener {
     JFrame loginFrame;
 
     private static final String dbClassName = "org.sqlite.JDBC";
-    private static final String LOANLIB = "jdbc:sqlite:loanLibrary.db";
-    private static final String USERLIB = "jdbc:sqlite:userLibrary.db";
-    private static final String DOCLIB = "jdbc:sqlite:documentLibrary.db";
-    private Connection connLoan = null;
-    private Connection connUser = null;
-    private Connection connDoc = null;
+    private static final String LIBDB = "jdbc:sqlite:library.db";
+    private Connection connLib = null;
+    private Statement connStat = null;
 
     public Library(String name) throws ClassNotFoundException,SQLException{
-        Properties p = new Properties();
-        p.put("user","system");
-        p.put("password","Wb7L2sryi!");
+        winDim = new Dimension(1240,780);
         String sql =null;
         try {
             Class.forName(dbClassName).newInstance();
+            connLib = DriverManager.getConnection(LIBDB);
+            connLib.setAutoCommit(false);
+            connStat = connLib.createStatement();
+            System.out.println("Opened database successfully");
             try {
-                connLoan = DriverManager.getConnection(LOANLIB);
-                Statement statement = connLoan.createStatement();
-                sql = "CREATE TABLE loanLibrary "+
+                System.out.println("querying");
+                //ResultSet rs = connStat.executeQuery( "SELECT name FROM sqlite_master WHERE type='table' AND name='loanLibrary';" );
+                //System.out.println(rs.getString("table") + "table found?");
+                System.out.println("table found?");
+                sql = "CREATE TABLE if not exists loanLibrary "+
                 " ( userID INTEGER, "+
                 " docID INTEGER, "+
                 " loanDate INTEGER, "+
                 " loanEnd INTEGER, "+
                 " loanReminderDate INTEGER, "+
-                " overdue boolean, "+
+                " overdue INTEGER, "+
                 " fare float )";
-                statement.executeUpdate(sql);
-                statement.close();
+                connStat.executeUpdate(sql);
+                System.out.println("table accessed?");
+                //rs.close();
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
                     System.out.println("SQLState: " + e.getSQLState());
                     System.out.println("VendorError: " + e.getErrorCode());
             }
             try {
-                connUser = DriverManager.getConnection(USERLIB);
-                Statement statement = connUser.createStatement();
-                sql = " CREATE TABLE userLibrary " +
+                sql = " CREATE TABLE if not exists userLibrary " +
                 " ( lastname VARCHAR(255), " + 
                 " name VARCHAR(255), " +
                 " address VARCHAR(255), " + 
@@ -75,59 +72,90 @@ public class Library implements ActionListener {
                 " nbLoanoverdue INTEGER, "+
                 " nbLoanopen INTEGER,"+ 
                 " reductioncode INTEGER )";
-                statement.executeUpdate(sql);
-                statement.close();
+                connStat.executeUpdate(sql);
+                System.out.println("table accessed?");
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
                     System.out.println("SQLState: " + e.getSQLState());
                     System.out.println("VendorError: " + e.getErrorCode());
             }
             try {
-                connDoc = DriverManager.getConnection(DOCLIB);
-                Statement statement = connDoc.createStatement();
-                sql = "CREATE TABLE documentLibrary "+
+                sql = "CREATE TABLE if not exists documentLibrary "+
                 "(code VARCHAR (255), "+
                 "author VARCHAR (255), "+
                 "title VARCHAR (255), "+
                 "year INTEGER, "+
-                "borrowable boolean, "+
-                "loaned boolean, "+
+                "borrowable INTEGER, "+
+                "loaned INTEGER, "+
                 "nbLoans INTEGER)";
-                statement.executeUpdate(sql);
-                statement.close();
+                connStat.executeUpdate(sql);
+                System.out.println("table accessed?");
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
                     System.out.println("SQLState: " + e.getSQLState());
                     System.out.println("VendorError: " + e.getErrorCode());
             }
+
+
+        connStat.close();
+        connLib.commit();
+        connLib.close();
         } catch (Exception ex) {
             System.out.println(ex);
         }
 
-    Connection c = DriverManager.getConnection(LOANLIB,p);
-    System.out.println("created first co");
-    Connection c2 = DriverManager.getConnection(USERLIB,p);
-    System.out.println("created second co");
-    Connection c3 = DriverManager.getConnection(DOCLIB,p);
-    System.out.println("created third co");
+        /*
+        INSERT INTO userLibrary VALUES ('Chaffre', 'Thomas', 'ESIEA', 1480026056, 1480028056, 0,  0, 0, 1);
+        INSERT INTO userLibrary VALUES ('Velay', 'Marc', 'ESIEA', 1480026056, 1480028056, 0,  0, 0, 1);
+        INSERT INTO documentLibrary VALUES ('0003', 'Wilbur Smith', 'Assegai', 1997,  1, 0, 0);
+        INSERT INTO documentLibrary VALUES ('0002', 'Wilbur Smith', 'Birds of prey', 1997,  1, 0, 0);
+        INSERT INTO documentLibrary VALUES ('0001', 'Hobb', 'L assassin royal', 1995,  1, 0, 0);
+        */
 
-    System.out.println("It works! Access to DBs done");
-    c.close();
-    c2.close();
-    c3.close();
 
+        /*connLib = DriverManager.getConnection(LIBDB);
+        connLib.setAutoCommit(false);
+        connStat = connLib.createStatement();
+        ResultSet rs = connStat.executeQuery( "SELECT * FROM userLibrary;" );
+        while ( rs.next() ) {
+            System.out.println( "lastname = " + rs.getString("lastname") );
+            System.out.println( "NAME = " +  rs.getString("name") );
+            System.out.println( "address = " +  rs.getString("address") );
+            System.out.println();
+        }
+        rs.close();
+        connStat.close();
+        connLib.close();*/
 
         this.name = name;
-        frame = new JFrame(this.name);
-        frame.setMinimumSize(new Dimension(640,480));
-        frame.setLayout(new BorderLayout());
-        
-        JPanel toolBar = new JPanel();
-        toolBar.setMinimumSize(new Dimension(640, 90));
 
-        testInput = new JTextArea(1, 20);
+        frame = new JFrame(this.name);
+        frame.setMinimumSize(winDim);
+        frame.setMaximumSize(winDim);
+        frame.setLayout(new BorderLayout());
+
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.X_AXIS));
+        searchPanel.setMinimumSize(new Dimension(1240, 100));
+        searchPanel.setPreferredSize(new Dimension(1240, 100));
+        searchPanel.setBackground(Color.RED);
+
+        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        inputPanel.setPreferredSize(new Dimension(299, 780));
+        inputPanel.setBorder(BorderFactory.createTitledBorder("Search"));
+
+        JPanel outputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        outputPanel.setPreferredSize(new Dimension(939, 780));
+        outputPanel.setBorder(BorderFactory.createTitledBorder("Results"));
+
+        /*testInput = new JTextArea(1, 20);
         JScrollPane scrollPane = new JScrollPane(testInput); 
-        testInput.setEditable(true);
+        testInput.setEditable(true);*/
+
+
+        JPanel toolBar = new JPanel();
+        toolBar.setMinimumSize(new Dimension(1240, 60));
+        toolBar.setPreferredSize(new Dimension(1240, 60));
 
         addDocBtn = new JButton("Add a new document");
         addDocBtn.setMinimumSize(new Dimension(60, 50));
@@ -144,19 +172,17 @@ public class Library implements ActionListener {
         createUserBtn.setActionCommand("createUserBtn");
         createUserBtn.addActionListener(this);
 
-        loginBtn = new JButton("login");
-        loginBtn.setMinimumSize(new Dimension(60, 50));
-        loginBtn.setActionCommand("loginBtn");
-        loginBtn.addActionListener(this);
+        searchPanel.add(inputPanel);
+        searchPanel.add(outputPanel);
 
-        toolBar.add(testInput);
+
+        //toolBar.add(testInput);
         toolBar.add(addDocBtn);
         toolBar.add(checkoutDocBtn);
         toolBar.add(createUserBtn);
-        toolBar.add(loginBtn);
 
-        frame.add(toolBar);
-        System.out.println("created lib");
+        frame.add(toolBar, BorderLayout.NORTH);
+        frame.add(searchPanel, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
@@ -183,12 +209,6 @@ public class Library implements ActionListener {
                         //Document newDoc = new Document(frame);
                 break;
 
-            case "loginBtn":                            
-                        frame.setVisible(false);
-                        login();
-                        //Document newDoc = new Document(frame);
-                break;
-
             case "saveDoc":
                         newDocframe.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
                         System.out.println("created doc");
@@ -204,20 +224,16 @@ public class Library implements ActionListener {
                         System.out.println("created user");
                 break;
 
-            case "login":
-                        loginFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-                        System.out.println("login");
-                break;
         } 
     }
 
     private void createNewDoc() {
         newDocframe = new JFrame("Document Creation");
-        newDocframe.setMinimumSize(new Dimension(640,480));
+        newDocframe.setMinimumSize(winDim);
         newDocframe.setLayout(new BorderLayout());
 
         JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(new Dimension(640, 480));
+        getDocInfo.setMinimumSize(winDim);
 
         saveBook = new JButton("create document");
         saveBook.setMinimumSize(new Dimension(60, 50));
@@ -242,11 +258,11 @@ public class Library implements ActionListener {
 
     private void checkoutDoc() {
         checkoutFrame = new JFrame("Document Creation");
-        checkoutFrame.setMinimumSize(new Dimension(640,480));
+        checkoutFrame.setMinimumSize(winDim);
         checkoutFrame.setLayout(new BorderLayout());
 
         JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(new Dimension(640, 480));
+        getDocInfo.setMinimumSize(winDim);
 
         checkout = new JButton("checkout document");
         checkout.setMinimumSize(new Dimension(60, 50));
@@ -271,11 +287,11 @@ public class Library implements ActionListener {
 
     public void createUser() {
         createUserFrame = new JFrame("Document Creation");
-        createUserFrame.setMinimumSize(new Dimension(640,480));
+        createUserFrame.setMinimumSize(winDim);
         createUserFrame.setLayout(new BorderLayout());
 
         JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(new Dimension(640, 480));
+        getDocInfo.setMinimumSize(winDim);
 
         createUser = new JButton("create account");
         createUser.setMinimumSize(new Dimension(60, 50));
@@ -298,34 +314,6 @@ public class Library implements ActionListener {
         }});
     }
 
-    public void login() {
-        loginFrame = new JFrame("Document Creation");
-        loginFrame.setMinimumSize(new Dimension(640,480));
-        loginFrame.setLayout(new BorderLayout());
-
-        JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(new Dimension(640, 480));
-
-        login = new JButton("Login");
-        login.setMinimumSize(new Dimension(60, 50));
-        login.setActionCommand("login");
-        login.addActionListener(this);
-
-        getDocInfo.add(login);
-
-        loginFrame.add(getDocInfo);
-        loginFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        loginFrame.pack();
-        loginFrame.setVisible(true);
-
-        loginFrame.addWindowListener( new WindowAdapter() {
-            public void windowClosing(WindowEvent e)
-            {
-                frame.setVisible(true);
-                frame.repaint();
-                loginFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        }});
-    }
 
     public static void main(String[] args){
         try {
