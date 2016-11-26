@@ -15,6 +15,7 @@ public class Library implements ActionListener {
     JButton createUserBtn;
 
     JButton saveBook;
+    JTextField authorNew;
 
     JButton checkout;
 
@@ -44,7 +45,6 @@ public class Library implements ActionListener {
                 System.out.println("querying");
                 //ResultSet rs = connStat.executeQuery( "SELECT name FROM sqlite_master WHERE type='table' AND name='loanLibrary';" );
                 //System.out.println(rs.getString("table") + "table found?");
-                System.out.println("table found?");
                 sql = "CREATE TABLE if not exists loanLibrary "+
                 " ( userID INTEGER, "+
                 " docID INTEGER, "+
@@ -54,7 +54,7 @@ public class Library implements ActionListener {
                 " overdue INTEGER, "+
                 " fare float )";
                 connStat.executeUpdate(sql);
-                System.out.println("table accessed?");
+                System.out.println("table loanLibrary accessed");
                 //rs.close();
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
@@ -73,7 +73,7 @@ public class Library implements ActionListener {
                 " nbLoanopen INTEGER,"+ 
                 " reductioncode INTEGER )";
                 connStat.executeUpdate(sql);
-                System.out.println("table accessed?");
+                System.out.println("table userLibrary accessed?");
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
                     System.out.println("SQLState: " + e.getSQLState());
@@ -89,7 +89,44 @@ public class Library implements ActionListener {
                 "loaned INTEGER, "+
                 "nbLoans INTEGER)";
                 connStat.executeUpdate(sql);
-                System.out.println("table accessed?");
+                System.out.println("table documentLibrary accessed");
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+            try {
+                sql = "CREATE TABLE if not exists books "+
+                "(nbPage INTEGER, "+
+                "loanLength INTEGER, "+
+                "loanFare INTEGER)";
+                connStat.executeUpdate(sql);
+                System.out.println("table book accessed");
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+            try {
+                sql = "CREATE TABLE if not exists audio "+
+                "(category VARCHAR (255), "+
+                "loanLength INTEGER, "+
+                "loanFare INTEGER)";
+                connStat.executeUpdate(sql);
+                System.out.println("table audio accessed");
+            } catch (SQLException e) {
+                    System.out.println("SQLException: " + e.getMessage());
+                    System.out.println("SQLState: " + e.getSQLState());
+                    System.out.println("VendorError: " + e.getErrorCode());
+            }
+            try {
+                sql = "CREATE TABLE if not exists video "+
+                "(legalMentions VARCHAR (255), "+
+                "videoLength INTEGER, "+
+                "loanLength INTEGER, "+
+                "loanFare INTEGER)";
+                connStat.executeUpdate(sql);
+                System.out.println("table video accessed");
             } catch (SQLException e) {
                     System.out.println("SQLException: " + e.getMessage());
                     System.out.println("SQLState: " + e.getSQLState());
@@ -191,28 +228,51 @@ public class Library implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         switch(e.getActionCommand()) { 
-            case "addDoc":                            
-                        frame.setVisible(false);
-                        createNewDoc();
-                        //Document newDoc = new Document(frame);
-                break; 
-                
+            /************* new document frame *****************/
+            case "saveDoc":
+                        newDocframe.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        System.out.println(authorNew.getText());
+                break;
+
+            case "bookRdBtn":
+                        System.out.println("selected new book");
+                break;
+            case "videoRdBtn":
+                        System.out.println("selected new video");
+                break;
+            case "audioRdBtn":
+                        System.out.println("selected new audio");
+                break;
+
+            /**************************************************/          
+
+
+
+            /************* new loan page **************************/    
             case "chkoutDoc":                            
                         frame.setVisible(false);
                         checkoutDoc();
-                        //Document newDoc = new Document(frame);
                 break;
 
+            /**************************************************/
+
+
+
+            /************* new user frame *****************/
             case "createUserBtn":                            
                         frame.setVisible(false);
                         createUser();
-                        //Document newDoc = new Document(frame);
                 break;
 
-            case "saveDoc":
-                        newDocframe.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-                        System.out.println("created doc");
-                break;
+            /**************************************************/
+
+
+
+            /************* library starting frame *****************/
+            case "addDoc":                            
+                        frame.setVisible(false);
+                        createNewDoc();
+                break; 
 
             case "checkout":
                         checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
@@ -224,25 +284,86 @@ public class Library implements ActionListener {
                         System.out.println("created user");
                 break;
 
+            /**************************************************/
         } 
     }
 
     private void createNewDoc() {
         newDocframe = new JFrame("Document Creation");
-        newDocframe.setMinimumSize(winDim);
+        newDocframe.setPreferredSize(winDim);
         newDocframe.setLayout(new BorderLayout());
 
         JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(winDim);
+        getDocInfo.setPreferredSize(winDim);
+        GroupLayout newDocLayout = new GroupLayout(getDocInfo);
+        getDocInfo.setLayout(newDocLayout);
 
+        /************************** first line: doc type selection ***************************/
+        JLabel rdBtnLabel = new JLabel("Select your document type: ");
+
+        JRadioButton bookRdBtn = new JRadioButton("Book");
+        bookRdBtn.setActionCommand("bookRdBtn");
+        bookRdBtn.addActionListener(this);
+        bookRdBtn.setSelected(true);
+
+        JRadioButton audioRdBtn = new JRadioButton("Audio");
+        audioRdBtn.setActionCommand("audioRdBtn");
+        audioRdBtn.addActionListener(this);
+
+        JRadioButton videoRdBtn = new JRadioButton("Video");
+        videoRdBtn.setActionCommand("videoRdBtn");
+        videoRdBtn.addActionListener(this);
+        
+        ButtonGroup docTypeGroup = new ButtonGroup();
+        docTypeGroup.add(bookRdBtn);
+        docTypeGroup.add(audioRdBtn);
+        docTypeGroup.add(videoRdBtn);
+        /*************************************************************************************/
+
+
+
+        /************************** first line: doc type selection ***************************/
+
+        JLabel authorLabel = new JLabel("Select your document type: ");
+
+        authorNew = new JTextField(50);
+
+        /*************************************************************************************/
         saveBook = new JButton("create document");
-        saveBook.setMinimumSize(new Dimension(60, 50));
+        saveBook.setPreferredSize(new Dimension(60, 50));
         saveBook.setActionCommand("saveDoc");
         saveBook.addActionListener(this);
 
-        getDocInfo.add(saveBook);
+    
+        newDocLayout.setAutoCreateGaps(true);
+        newDocLayout.setAutoCreateContainerGaps(true);
+        newDocLayout.setHorizontalGroup(newDocLayout
+            .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(rdBtnLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(bookRdBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(audioRdBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(videoRdBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(authorLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(authorNew, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addComponent(saveBook, 0, GroupLayout.DEFAULT_SIZE, 200));
 
-        newDocframe.add(getDocInfo);
+        newDocLayout.setVerticalGroup(newDocLayout
+            .createSequentialGroup()
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(rdBtnLabel)
+                    .addComponent(bookRdBtn)
+                    .addComponent(audioRdBtn)
+                    .addComponent(videoRdBtn))
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(authorLabel)
+                    .addComponent(authorNew))
+                .addComponent(saveBook));
+
+
+
+        newDocframe.add(getDocInfo, BorderLayout.CENTER);
         newDocframe.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         newDocframe.pack();
         newDocframe.setVisible(true);
