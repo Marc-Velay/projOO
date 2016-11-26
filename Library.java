@@ -9,13 +9,22 @@ public class Library implements ActionListener {
 
     String name;
     Dimension winDim;
-    JTextArea testInput;
+    GroupLayout newDocLayout;
     JButton addDocBtn;
     JButton checkoutDocBtn;
     JButton createUserBtn;
+    ButtonGroup docTypeGroup;
 
     JButton saveBook;
     JTextField authorNew;
+    JTextField titleNew;
+    JTextField yearNew;
+    JTextField sizeNew;
+    JTextField descNew;
+    JLabel nbPageLabel;
+    JLabel movieLengthLabel;
+    JLabel legalLabel;
+    JLabel catLabel;
 
     JButton checkout;
 
@@ -43,8 +52,6 @@ public class Library implements ActionListener {
             System.out.println("Opened database successfully");
             try {
                 System.out.println("querying");
-                //ResultSet rs = connStat.executeQuery( "SELECT name FROM sqlite_master WHERE type='table' AND name='loanLibrary';" );
-                //System.out.println(rs.getString("table") + "table found?");
                 sql = "CREATE TABLE if not exists loanLibrary "+
                 " ( userID INTEGER, "+
                 " docID INTEGER, "+
@@ -85,6 +92,9 @@ public class Library implements ActionListener {
                 "author VARCHAR (255), "+
                 "title VARCHAR (255), "+
                 "year INTEGER, "+
+                "length INTEGER, "+     //pages or time, depending on book or video
+                "description TEXT, "+   //legal mentions, music category
+                "type CHAR (1), "+      //B book, V video, A audio
                 "borrowable INTEGER, "+
                 "loaned INTEGER, "+
                 "nbLoans INTEGER)";
@@ -95,45 +105,6 @@ public class Library implements ActionListener {
                     System.out.println("SQLState: " + e.getSQLState());
                     System.out.println("VendorError: " + e.getErrorCode());
             }
-            try {
-                sql = "CREATE TABLE if not exists books "+
-                "(nbPage INTEGER, "+
-                "loanLength INTEGER, "+
-                "loanFare INTEGER)";
-                connStat.executeUpdate(sql);
-                System.out.println("table book accessed");
-            } catch (SQLException e) {
-                    System.out.println("SQLException: " + e.getMessage());
-                    System.out.println("SQLState: " + e.getSQLState());
-                    System.out.println("VendorError: " + e.getErrorCode());
-            }
-            try {
-                sql = "CREATE TABLE if not exists audio "+
-                "(category VARCHAR (255), "+
-                "loanLength INTEGER, "+
-                "loanFare INTEGER)";
-                connStat.executeUpdate(sql);
-                System.out.println("table audio accessed");
-            } catch (SQLException e) {
-                    System.out.println("SQLException: " + e.getMessage());
-                    System.out.println("SQLState: " + e.getSQLState());
-                    System.out.println("VendorError: " + e.getErrorCode());
-            }
-            try {
-                sql = "CREATE TABLE if not exists video "+
-                "(legalMentions VARCHAR (255), "+
-                "videoLength INTEGER, "+
-                "loanLength INTEGER, "+
-                "loanFare INTEGER)";
-                connStat.executeUpdate(sql);
-                System.out.println("table video accessed");
-            } catch (SQLException e) {
-                    System.out.println("SQLException: " + e.getMessage());
-                    System.out.println("SQLState: " + e.getSQLState());
-                    System.out.println("VendorError: " + e.getErrorCode());
-            }
-
-
         connStat.close();
         connLib.commit();
         connLib.close();
@@ -185,11 +156,6 @@ public class Library implements ActionListener {
         outputPanel.setPreferredSize(new Dimension(939, 780));
         outputPanel.setBorder(BorderFactory.createTitledBorder("Results"));
 
-        /*testInput = new JTextArea(1, 20);
-        JScrollPane scrollPane = new JScrollPane(testInput); 
-        testInput.setEditable(true);*/
-
-
         JPanel toolBar = new JPanel();
         toolBar.setMinimumSize(new Dimension(1240, 60));
         toolBar.setPreferredSize(new Dimension(1240, 60));
@@ -231,22 +197,82 @@ public class Library implements ActionListener {
             /************* new document frame *****************/
             case "saveDoc":
                         newDocframe.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-                        System.out.println(authorNew.getText());
+                        String author = authorNew.getText();
+                        String title = titleNew.getText();
+                        String desc = descNew.getText();
+                        int year = 0;
+                        String yearInput = yearNew.getText();
+                        if(yearInput.matches("-?\\d+")) {
+                            year = Integer.parseInt(yearInput);
+                        }  
+                        String sizeInput = sizeNew.getText();
+                        int size = 0;
+                        if(sizeInput.matches("-?\\d+")) {
+                            size = Integer.parseInt(sizeInput);
+                        }                        
+                        String type = getSelectedButtonText(docTypeGroup);
+                        try {
+                            Class.forName(dbClassName).newInstance();
+                            connLib = DriverManager.getConnection(LIBDB);
+                            connLib.setAutoCommit(false);
+                            connStat = connLib.createStatement();
+                            try {
+                                ResultSet rs = connStat.executeQuery("SELECT Count(*) AS nbRow FROM documentLibrary;");
+                                int rows = rs.getInt("nbRow");
+                                String sql = "INSERT INTO documentLibrary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                                PreparedStatement ps = connLib.prepareStatement(sql);
+                                ps.setString(1, type + rows);
+                                ps.setString(2, author);
+                                ps.setString(3, title);
+                                ps.setInt(4, year);
+                                ps.setInt(5, size);
+                                ps.setString(6, desc);
+                                ps.setString(7, type);
+                                ps.setInt(8, 1);
+                                ps.setInt(9, 0);
+                                ps.setInt(10, 0);
+                                ps.executeUpdate();
+
+                            } catch (SQLException exc) {
+                                    System.out.println("SQLException: " + exc.getMessage());
+                                    System.out.println("SQLState: " + exc.getSQLState());
+                                    System.out.println("VendorError: " + exc.getErrorCode());
+                            }
+                        connStat.close();
+                        connLib.commit();
+                        connLib.close();
+                        } catch (Exception ex) {
+                            System.out.println(ex);
+                        }
                 break;
 
             case "bookRdBtn":
+                        nbPageLabel.setVisible(true);
+                        sizeNew.setVisible(true);
+                        movieLengthLabel.setVisible(false);
+                        legalLabel.setVisible(false);
+                        catLabel.setVisible(false);
+                        descNew.setVisible(false);  
                         System.out.println("selected new book");
                 break;
             case "videoRdBtn":
+                        nbPageLabel.setVisible(false);
+                        sizeNew.setVisible(true);
+                        movieLengthLabel.setVisible(true);
+                        legalLabel.setVisible(true);
+                        catLabel.setVisible(false);
+                        descNew.setVisible(true);
                         System.out.println("selected new video");
                 break;
             case "audioRdBtn":
+                        nbPageLabel.setVisible(false);
+                        sizeNew.setVisible(false);
+                        movieLengthLabel.setVisible(false);
+                        legalLabel.setVisible(false);
+                        catLabel.setVisible(true);
+                        descNew.setVisible(true);
                         System.out.println("selected new audio");
                 break;
-
-            /**************************************************/          
-
-
 
             /************* new loan page **************************/    
             case "chkoutDoc":                            
@@ -254,19 +280,11 @@ public class Library implements ActionListener {
                         checkoutDoc();
                 break;
 
-            /**************************************************/
-
-
-
-            /************* new user frame *****************/
+            /************* new user frame *************************/
             case "createUserBtn":                            
                         frame.setVisible(false);
                         createUser();
                 break;
-
-            /**************************************************/
-
-
 
             /************* library starting frame *****************/
             case "addDoc":                            
@@ -295,7 +313,7 @@ public class Library implements ActionListener {
 
         JPanel getDocInfo = new JPanel();
         getDocInfo.setPreferredSize(winDim);
-        GroupLayout newDocLayout = new GroupLayout(getDocInfo);
+        newDocLayout = new GroupLayout(getDocInfo);
         getDocInfo.setLayout(newDocLayout);
 
         /************************** first line: doc type selection ***************************/
@@ -314,21 +332,45 @@ public class Library implements ActionListener {
         videoRdBtn.setActionCommand("videoRdBtn");
         videoRdBtn.addActionListener(this);
         
-        ButtonGroup docTypeGroup = new ButtonGroup();
+        docTypeGroup = new ButtonGroup();
         docTypeGroup.add(bookRdBtn);
         docTypeGroup.add(audioRdBtn);
         docTypeGroup.add(videoRdBtn);
-        /*************************************************************************************/
 
+        /************************** second line: get author name ***************************/
 
+        JLabel authorLabel = new JLabel("* Author: ");
+        authorNew = new JTextField(50);
+
+        /************************** third line: doc type selection ***************************/
+
+        JLabel docTitleLabel = new JLabel("* Title: ");
+        titleNew = new JTextField(50);
+
+        /************************** fourth line: doc type selection ***************************/
+
+        JLabel yearLabel = new JLabel("* Year of production: ");
+        yearNew = new JTextField(25);
 
         /************************** first line: doc type selection ***************************/
 
-        JLabel authorLabel = new JLabel("Select your document type: ");
+        nbPageLabel = new JLabel("* Number of pages: ");
+        movieLengthLabel = new JLabel("* Length of movie: ");
+        sizeNew = new JTextField(25);
 
-        authorNew = new JTextField(50);
+        /************************** first line: doc type selection ***************************/
 
-        /*************************************************************************************/
+        legalLabel = new JLabel("* Legal Mentions: ");
+        catLabel = new JLabel("* Category of music: ");
+        descNew = new JTextField(25);
+
+        nbPageLabel.setVisible(true);
+        sizeNew.setVisible(true);
+        movieLengthLabel.setVisible(false);
+        legalLabel.setVisible(false);
+        catLabel.setVisible(false);
+        descNew.setVisible(false);
+
         saveBook = new JButton("create document");
         saveBook.setPreferredSize(new Dimension(60, 50));
         saveBook.setActionCommand("saveDoc");
@@ -337,6 +379,7 @@ public class Library implements ActionListener {
     
         newDocLayout.setAutoCreateGaps(true);
         newDocLayout.setAutoCreateContainerGaps(true);
+        newDocLayout.setHonorsVisibility(true);
         newDocLayout.setHorizontalGroup(newDocLayout
             .createParallelGroup(GroupLayout.Alignment.LEADING, false)
             .addGroup(newDocLayout.createSequentialGroup()
@@ -346,7 +389,21 @@ public class Library implements ActionListener {
                 .addComponent(videoRdBtn, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(newDocLayout.createSequentialGroup()
                 .addComponent(authorLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(authorNew, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(authorNew, 0, GroupLayout.DEFAULT_SIZE, 300))
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(docTitleLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(titleNew, 0, GroupLayout.DEFAULT_SIZE, 300))
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(yearLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(yearNew, 0, GroupLayout.DEFAULT_SIZE, 150))
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(nbPageLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(movieLengthLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(sizeNew, 0, GroupLayout.DEFAULT_SIZE, 300))
+            .addGroup(newDocLayout.createSequentialGroup()
+                .addComponent(legalLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(catLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(descNew, 0, GroupLayout.DEFAULT_SIZE, 300))
             .addComponent(saveBook, 0, GroupLayout.DEFAULT_SIZE, 200));
 
         newDocLayout.setVerticalGroup(newDocLayout
@@ -359,6 +416,20 @@ public class Library implements ActionListener {
                 .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(authorLabel)
                     .addComponent(authorNew))
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(docTitleLabel)
+                    .addComponent(titleNew))
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(yearLabel)
+                    .addComponent(yearNew))
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(nbPageLabel)
+                    .addComponent(movieLengthLabel)
+                    .addComponent(sizeNew))
+                .addGroup(newDocLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(legalLabel)
+                    .addComponent(catLabel)
+                    .addComponent(descNew))
                 .addComponent(saveBook));
 
 
@@ -446,5 +517,25 @@ public class Library implements ActionListener {
         } catch (SQLException e) {
             System.out.println(e.getMessage() + "exception sql");
         }
+    }
+
+    public String getSelectedButtonText(ButtonGroup buttonGroup) {
+        for (Enumeration<AbstractButton> buttons = buttonGroup.getElements(); buttons.hasMoreElements();) {
+            AbstractButton button = buttons.nextElement();
+
+            if (button.isSelected()) {
+                String btn = button.getText();
+                System.out.println(btn);
+                if(btn.equals("Book")) {
+                    return "B";
+                } else if(btn.equals("Video")) {
+                    return "V";
+                } else if(btn.equals("Audio")) {
+                    return "A";
+                }
+            }
+        }
+
+        return null;
     }
 }
