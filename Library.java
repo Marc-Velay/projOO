@@ -76,13 +76,14 @@ public class Library implements ActionListener {
             try {
                 System.out.println("querying");
                 sql = "CREATE TABLE if not exists loanLibrary "+
-                " ( userID VARCHAR (255), "+
+                " ( loanID VARCHAR (255),"+
+                " userID VARCHAR (255), "+
                 " docID VARCHAR (255), "+
                 " loanDate DATE, "+
                 " loanEnd DATE, "+
                 " loanReminderDate DATE, "+
                 " overdue INTEGER, "+
-                " fare float )";
+                " fare FLOAT )";
                 connStat.executeUpdate(sql);
                 System.out.println("table loanLibrary accessed");
                 //rs.close();
@@ -360,12 +361,14 @@ public class Library implements ActionListener {
                                                 notFoundDoc.setVisible(false); 
                                             } else {
                                                 foundDoc.setVisible(false);
-                                                notFoundDoc.setVisible(true);                                    
+                                                notFoundDoc.setVisible(true);  
+                                                loanDocID = "";                                  
                                             }
                                         }
                                     }
                                 } 
                                 checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                                checkoutFrame.setVisible(false);
                                 checkoutFrame.setVisible(true);
                             } catch (SQLException exc) {
                                     System.out.println("SQLException: " + exc.getMessage());
@@ -425,6 +428,7 @@ public class Library implements ActionListener {
                                                 foundUser.setVisible(true);
                                                 notFoundUser.setVisible(false); 
                                             } else {
+                                                loanUserID = "";
                                                 foundUser.setVisible(false);
                                                 notFoundUser.setVisible(true);                                    
                                             }
@@ -448,28 +452,48 @@ public class Library implements ActionListener {
 
             case "checkout":
                         checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
-                        
-                        String userLName = userLNameField.getText();
-                        String userName = userNameField.getText();
-                        try {
-                            Class.forName(dbClassName).newInstance();
-                            connLib = DriverManager.getConnection(LIBDB);
-                            connLib.setAutoCommit(false);
-                            connStat = connLib.createStatement();
-                            /*try{
-                                   
-                            } catch(SQLException exce) {
-                                System.out.println("SQLException: " + exce.getMessage());
-                                System.out.println("SQLState: " + exce.getSQLState());
-                                System.out.println("VendorError: " + exce.getErrorCode());
-                            }*/
-                            connStat.close();
-                            connLib.commit();
-                            connLib.close();
-                        } catch(Exception excep) {
-                            System.out.println(excep);
+                        if(loanUserID != null && loanDocID != null) {
+                            String userLName = userLNameField.getText();
+                            String userName = userNameField.getText();
+                            try {
+                                Class.forName(dbClassName).newInstance();
+                                connLib = DriverManager.getConnection(LIBDB);
+                                connLib.setAutoCommit(false);
+                                connStat = connLib.createStatement();
+                                try{                                
+                                    String loanReq = "INSERT INTO loanLibrary VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+                                    ResultSet rs4 = connStat.executeQuery("SELECT Count(*) AS nbRow FROM loanLibrary;");
+                                    int loans = rs4.getInt("nbRow");
+                                    Calendar cal1 = Calendar.getInstance();
+                                    java.util.Date loanDate = cal1.getTime();
+                                    cal1.add(Calendar.WEEK_OF_MONTH, 2);
+                                    java.util.Date loanReminder = cal1.getTime();
+                                    cal1.add(Calendar.WEEK_OF_MONTH, 2);
+                                    java.util.Date loanDue = cal1.getTime();
+                                    PreparedStatement ps2 = connLib.prepareStatement(loanReq);
+                                    ps2.setString(1, Integer.toHexString(loans));
+                                    ps2.setString(2, loanUserID);
+                                    ps2.setString(3, loanDocID);
+                                    ps2.setDate(4, new java.sql.Date(loanDate.getTime()));
+                                    ps2.setDate(5, new java.sql.Date(loanReminder.getTime()));
+                                    ps2.setDate(6, new java.sql.Date(loanDue.getTime()));
+                                    ps2.setInt(7, 0);
+                                    ps2.setFloat(8, (float)1.5);
+                                    ps2.executeUpdate();
+                                                                
+                                } catch(SQLException exce) {
+                                    System.out.println("SQLException: " + exce.getMessage());
+                                    System.out.println("SQLState: " + exce.getSQLState());
+                                    System.out.println("VendorError: " + exce.getErrorCode());
+                                }
+                                connStat.close();
+                                connLib.commit();
+                                connLib.close();
+                            } catch(Exception excep) {
+                                System.out.println(excep);
+                            }
+                            System.out.println("checked out doc");
                         }
-                        System.out.println("checked out doc");
                 break;
 
             case "createUser":
