@@ -16,6 +16,9 @@ public class Library implements ActionListener {
     JButton checkoutDocBtn;
     JButton createUserBtn;
     ButtonGroup docTypeGroup;
+    JPanel inputPanel;
+    JPanel outputPanel;
+    JPanel searchPanel;
 
     JButton saveBook;
     JTextField authorNew;
@@ -137,29 +140,6 @@ public class Library implements ActionListener {
             System.out.println(ex);
         }
 
-        /*
-        INSERT INTO userLibrary VALUES ('Chaffre', 'Thomas', 'ESIEA', 1480026056, 1480028056, 0,  0, 0, 1);
-        INSERT INTO userLibrary VALUES ('Velay', 'Marc', 'ESIEA', 1480026056, 1480028056, 0,  0, 0, 1);
-        INSERT INTO documentLibrary VALUES ('0003', 'Wilbur Smith', 'Assegai', 1997,  1, 0, 0);
-        INSERT INTO documentLibrary VALUES ('0002', 'Wilbur Smith', 'Birds of prey', 1997,  1, 0, 0);
-        INSERT INTO documentLibrary VALUES ('0001', 'Hobb', 'L assassin royal', 1995,  1, 0, 0);
-        */
-
-
-        /*connLib = DriverManager.getConnection(LIBDB);
-        connLib.setAutoCommit(false);
-        connStat = connLib.createStatement();
-        ResultSet rs = connStat.executeQuery( "SELECT * FROM userLibrary;" );
-        while ( rs.next() ) {
-            System.out.println( "lastname = " + rs.getString("lastname") );
-            System.out.println( "NAME = " +  rs.getString("name") );
-            System.out.println( "address = " +  rs.getString("address") );
-            System.out.println();
-        }
-        rs.close();
-        connStat.close();
-        connLib.close();*/
-
         this.name = name;
 
         frame = new JFrame(this.name);
@@ -167,19 +147,35 @@ public class Library implements ActionListener {
         frame.setMaximumSize(winDim);
         frame.setLayout(new BorderLayout());
 
-        JPanel searchPanel = new JPanel();
+        searchPanel = new JPanel();
         searchPanel.setLayout(new BoxLayout(searchPanel, BoxLayout.X_AXIS));
         searchPanel.setMinimumSize(new Dimension(1240, 100));
         searchPanel.setPreferredSize(new Dimension(1240, 100));
-        searchPanel.setBackground(Color.RED);
 
-        JPanel inputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        inputPanel = new JPanel();
+        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.Y_AXIS));
         inputPanel.setPreferredSize(new Dimension(299, 780));
+        searchPanel.setMinimumSize(new Dimension(1240, 780));
         inputPanel.setBorder(BorderFactory.createTitledBorder("Search"));
 
-        JPanel outputPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton listDocs = new JButton("List all documents");
+        listDocs.setPreferredSize(new Dimension(60, 300));
+        listDocs.setActionCommand("listDocs");
+        listDocs.addActionListener(this);
+        JButton listUsers = new JButton("List all users");
+        listUsers.setPreferredSize(new Dimension(60, 300));
+        listUsers.setActionCommand("listUsers");
+        listUsers.addActionListener(this);
+        JButton listLoans = new JButton("List all loans");
+        listLoans.setPreferredSize(new Dimension(60, 300));
+        listLoans.setActionCommand("listLoans");
+        listLoans.addActionListener(this);
+
+        outputPanel = new JPanel();
+        outputPanel.setLayout(new BoxLayout(outputPanel, BoxLayout.Y_AXIS));
         outputPanel.setPreferredSize(new Dimension(939, 780));
-        outputPanel.setBorder(BorderFactory.createTitledBorder("Results"));
+        outputPanel.setBorder(BorderFactory.createTitledBorder("Results"));    
+
 
         JPanel toolBar = new JPanel();
         toolBar.setMinimumSize(new Dimension(1240, 60));
@@ -200,11 +196,14 @@ public class Library implements ActionListener {
         createUserBtn.setActionCommand("createUserBtn");
         createUserBtn.addActionListener(this);
 
+        inputPanel.add(listDocs);
+        inputPanel.add(listLoans);
+        inputPanel.add(listUsers);
+
         searchPanel.add(inputPanel);
         searchPanel.add(outputPanel);
 
 
-        //toolBar.add(testInput);
         toolBar.add(addDocBtn);
         toolBar.add(checkoutDocBtn);
         toolBar.add(createUserBtn);
@@ -546,6 +545,212 @@ public class Library implements ActionListener {
                         }
                         System.out.println("created user");
                 break;
+
+                case "listDocs":
+                    outputPanel.removeAll();
+                    outputPanel = new JPanel();
+
+                    try {
+                        Class.forName(dbClassName).newInstance();
+                        connLib = DriverManager.getConnection(LIBDB);
+                        connLib.setAutoCommit(false);
+                        connStat = connLib.createStatement();
+                        try {
+                            ResultSet content = connStat.executeQuery("SELECT * FROM documentLibrary;");
+                            while(content.next()) {
+                                JPanel panel = new JPanel();
+                                panel.setPreferredSize(new Dimension(500, 200));
+                                GroupLayout panelLayout = new GroupLayout(panel);
+                                panel.setLayout(panelLayout);
+                                panelLayout.setAutoCreateGaps(true);
+                                panelLayout.setAutoCreateContainerGaps(true);
+                                panelLayout.setHonorsVisibility(true);
+                                JLabel auth = new JLabel("Author: " + content.getString("author") + "  ");
+                                JLabel titre = new JLabel("Title: " + content.getString("title") + "  ");
+                                JLabel yr = new JLabel("Published: " + content.getInt("year") + "  ");
+                                JLabel lgth = new JLabel("Length: " + content.getInt("length") + "  ");
+                                JLabel descr = new JLabel("Description: " + content.getString("description") + "  ");
+                                JLabel typ = new JLabel("");
+            
+                                if(content.getString("type").matches("B")) {
+                                    typ.setText("Book  ");
+                                } else if(content.getString("type").matches("V")) {
+                                    typ.setText("Video  ");
+                                } else if(content.getString("type").matches("A")) {
+                                    typ.setText("Audio  ");
+                                } 
+                                JLabel loansNB = new JLabel("Loaned " + content.getInt("nbLoans") + " times");
+                                panelLayout.setHorizontalGroup(panelLayout
+                                .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(auth, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(titre, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(yr, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(descr, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(typ, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(loansNB, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+
+                                panelLayout.setVerticalGroup(panelLayout
+                                .createSequentialGroup()
+                                    .addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(auth)
+                                        .addComponent(titre)
+                                        .addComponent(yr))
+                                    .addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(descr)
+                                        .addComponent(typ)
+                                        .addComponent(loansNB)));
+
+                                outputPanel.add(panel);
+                                outputPanel.revalidate();
+                                searchPanel.revalidate();
+                            } 
+                            System.out.println("update UI?");
+                            searchPanel.add(outputPanel);
+                            frame.add(searchPanel);
+                            frame.setVisible(true);
+                        } catch (SQLException exc) {
+                                System.out.println("SQLException: " + exc.getMessage());
+                                System.out.println("SQLState: " + exc.getSQLState());
+                                System.out.println("VendorError: " + exc.getErrorCode());
+                        }
+                    connStat.close();
+                    connLib.close();
+                    } catch (Exception ex) {
+                        System.out.println(ex);
+                    }
+
+                    frame.setVisible(true);
+                    break;
+
+                case "listLoans":
+                    outputPanel.removeAll();
+                    outputPanel = new JPanel();
+
+                    try {
+                        Class.forName(dbClassName).newInstance();
+                        connLib = DriverManager.getConnection(LIBDB);
+                        connLib.setAutoCommit(false);
+                        connStat = connLib.createStatement();
+                        try {
+                            ResultSet content1 = connStat.executeQuery("SELECT * FROM loanLibrary;");
+                            while(content1.next()) {
+                                JPanel panel = new JPanel();
+                                panel.setPreferredSize(new Dimension(500, 200));
+                                GroupLayout panelLayout = new GroupLayout(panel);
+                                panel.setLayout(panelLayout);
+                                panelLayout.setAutoCreateGaps(true);
+                                panelLayout.setAutoCreateContainerGaps(true);
+                                panelLayout.setHonorsVisibility(true);
+                                JLabel loanee = new JLabel("Loanee: " + content1.getString("userID") + "  ");
+                                JLabel loaned = new JLabel("Loaned: " + content1.getString("docID") + "  ");
+                                /*java.sql.Date temp = new java.sql.Date(content1.getDate("loanDate"));
+                                //temp.setTime(content1.getString("loanDate"));
+                                JLabel loanDate = new JLabel("Published: " + temp + "  ");
+                                temp = df.parse(content1.getString("loanEnd"));
+                                JLabel loanEndDate = new JLabel("Length: " + temp + "  ");*/
+            
+                                panelLayout.setHorizontalGroup(panelLayout
+                                .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(loanee, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(loaned, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                /*.addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(loanDate, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(loanEndDate, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))*/);
+
+                                panelLayout.setVerticalGroup(panelLayout
+                                .createSequentialGroup()
+                                    .addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(loanee)
+                                        .addComponent(loaned))
+                                    /*.addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(loanDate)
+                                        .addComponent(loanEndDate))*/);
+
+                                outputPanel.add(panel);
+                                outputPanel.revalidate();
+                                searchPanel.revalidate();
+                            } 
+                            System.out.println("update UI?");
+                            searchPanel.add(outputPanel);
+                            frame.add(searchPanel);
+                            frame.setVisible(true);
+                        } catch (SQLException exc) {
+                                System.out.println("SQLException: " + exc.getMessage());
+                                System.out.println("SQLState: " + exc.getSQLState());
+                                System.out.println("VendorError: " + exc.getErrorCode());
+                        }
+                    connStat.close();
+                    connLib.close();
+                    } catch (Exception ex) {
+                        System.out.println(ex);
+                    }
+
+                    frame.setVisible(true);
+                    break;
+
+                case "listUsers":
+                    outputPanel.removeAll();
+                    outputPanel = new JPanel();
+
+                    try {
+                        Class.forName(dbClassName).newInstance();
+                        connLib = DriverManager.getConnection(LIBDB);
+                        connLib.setAutoCommit(false);
+                        connStat = connLib.createStatement();
+                        try {
+                            ResultSet content2 = connStat.executeQuery("SELECT * FROM userLibrary;");
+                            while(content2.next()) {
+                                JPanel panel = new JPanel();
+                                panel.setPreferredSize(new Dimension(500, 200));
+                                GroupLayout panelLayout = new GroupLayout(panel);
+                                panel.setLayout(panelLayout);
+                                panelLayout.setAutoCreateGaps(true);
+                                panelLayout.setAutoCreateContainerGaps(true);
+                                panelLayout.setHonorsVisibility(true);
+                                JLabel lastN = new JLabel("Last name: " + content2.getString("lastname") + "  ");
+                                JLabel nam = new JLabel("Name: " + content2.getString("name") + "  ");
+                                JLabel addr = new JLabel("Address: " + content2.getString("address") + "  ");
+            
+                                panelLayout.setHorizontalGroup(panelLayout
+                                .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(lastN, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(nam, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addGroup(panelLayout.createSequentialGroup()
+                                    .addComponent(addr, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)));
+
+                                panelLayout.setVerticalGroup(panelLayout
+                                .createSequentialGroup()
+                                    .addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(lastN)
+                                        .addComponent(nam))                                        
+                                    .addGroup(panelLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(addr)));
+
+                                outputPanel.add(panel);
+                                outputPanel.revalidate();
+                                searchPanel.revalidate();
+                            } 
+                            System.out.println("update UI?");
+                            searchPanel.add(outputPanel);
+                            frame.add(searchPanel);
+                            frame.setVisible(true);
+                        } catch (SQLException exc) {
+                                System.out.println("SQLException: " + exc.getMessage());
+                                System.out.println("SQLState: " + exc.getSQLState());
+                                System.out.println("VendorError: " + exc.getErrorCode());
+                        }
+                    connStat.close();
+                    connLib.close();
+                    } catch (Exception ex) {
+                        System.out.println(ex);
+                    }
+
+                    frame.setVisible(true);
+                    break;
 
             /**************************************************/
         } 
@@ -944,4 +1149,5 @@ public class Library implements ActionListener {
 
         return null;
     }
+
 }
