@@ -10,6 +10,7 @@ public class Library implements ActionListener {
     String name;
     Dimension winDim;
     GroupLayout newDocLayout;
+    GroupLayout newUserLayout;
     JButton addDocBtn;
     JButton checkoutDocBtn;
     JButton createUserBtn;
@@ -29,6 +30,13 @@ public class Library implements ActionListener {
     JButton checkout;
 
     JButton createUser;
+    JTextField lastnameNew;
+    JTextField nameNew;
+    JTextField addressNew;
+    JTextField addressVilleNew;
+    JTextField addressPaysNew;
+    JTextField addressComplementNew;
+    JTextField reductionNew;
     
     JFrame frame;
     JFrame newDocframe;
@@ -55,9 +63,9 @@ public class Library implements ActionListener {
                 sql = "CREATE TABLE if not exists loanLibrary "+
                 " ( userID INTEGER, "+
                 " docID INTEGER, "+
-                " loanDate INTEGER, "+
-                " loanEnd INTEGER, "+
-                " loanReminderDate INTEGER, "+
+                " loanDate DATE, "+
+                " loanEnd DATE, "+
+                " loanReminderDate DATE, "+
                 " overdue INTEGER, "+
                 " fare float )";
                 connStat.executeUpdate(sql);
@@ -73,8 +81,8 @@ public class Library implements ActionListener {
                 " ( lastname VARCHAR(255), " + 
                 " name VARCHAR(255), " +
                 " address VARCHAR(255), " + 
-                " inscriptiondate INTEGER, "+
-                " renewaldate INTEGER, "+
+                " inscriptiondate DATE, "+
+                " renewaldate DATE, "+
                 " nbLoanfinished INTEGER, "+
                 " nbLoanoverdue INTEGER, "+
                 " nbLoanopen INTEGER,"+ 
@@ -299,6 +307,49 @@ public class Library implements ActionListener {
 
             case "createUser":
                         createUserFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        String lastname = lastnameNew.getText();
+                        String name = nameNew.getText();
+                        String address = addressNew.getText();
+                        address += ", " +addressVilleNew.getText();
+                        address += ", " +addressPaysNew.getText();
+                        if(addressComplementNew.getText().matches(""));
+                        else address += ", " +addressComplementNew.getText();                        
+                        String reduc = reductionNew.getText();
+
+                        try {
+                            Class.forName(dbClassName).newInstance();
+                            connLib = DriverManager.getConnection(LIBDB);
+                            connLib.setAutoCommit(false);
+                            connStat = connLib.createStatement();
+                            try {
+                                Calendar cal = Calendar.getInstance();
+                                java.util.Date today = cal.getTime();
+                                cal.add(Calendar.YEAR, 1);
+                                java.util.Date renewaldate = cal.getTime();
+                                String sql = "INSERT INTO userLibrary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                                PreparedStatement ps = connLib.prepareStatement(sql);
+                                ps.setString(1, lastname);
+                                ps.setString(2, name);
+                                ps.setString(3, address);
+                                ps.setDate(4, new java.sql.Date(today.getTime()));
+                                ps.setDate(5, new java.sql.Date(renewaldate.getTime()));
+                                ps.setInt(6, 0);
+                                ps.setInt(7, 0);
+                                ps.setInt(8, 0);
+                                ps.setString(9, reduc);
+                                ps.executeUpdate();
+
+                            } catch (SQLException exc) {
+                                    System.out.println("SQLException: " + exc.getMessage());
+                                    System.out.println("SQLState: " + exc.getSQLState());
+                                    System.out.println("VendorError: " + exc.getErrorCode());
+                            }
+                        connStat.close();
+                        connLib.commit();
+                        connLib.close();
+                        } catch (Exception ex) {
+                            System.out.println(ex);
+                        }
                         System.out.println("created user");
                 break;
 
@@ -482,17 +533,89 @@ public class Library implements ActionListener {
         createUserFrame.setMinimumSize(winDim);
         createUserFrame.setLayout(new BorderLayout());
 
-        JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(winDim);
+        JPanel getUserInfo = new JPanel();
+        getUserInfo.setPreferredSize(winDim);
+        newUserLayout = new GroupLayout(getUserInfo);
+        getUserInfo.setLayout(newUserLayout);
+
+        JLabel lastnameLabel = new JLabel("* Last name: ");
+        JLabel nameLabel = new JLabel("* Name: ");
+        JLabel addressLabel = new JLabel("* Address: ");
+        JLabel addressLabel1 = new JLabel("* Ville: ");
+        JLabel addressLabel2 = new JLabel("* Pays: ");
+        JLabel addressLabel3 = new JLabel("Complement: ");
+        JLabel reductionLabel = new JLabel("Reduction code: ");
+
+        lastnameNew = new JTextField(30);
+        nameNew = new JTextField(30);
+        addressNew = new JTextField(30);
+        addressVilleNew = new JTextField(30);
+        addressPaysNew = new JTextField(30);
+        addressComplementNew = new JTextField(30);
+        reductionNew = new JTextField(50);
 
         createUser = new JButton("create account");
-        createUser.setMinimumSize(new Dimension(60, 50));
+        createUser.setPreferredSize(new Dimension(60, 50));
         createUser.setActionCommand("createUser");
         createUser.addActionListener(this);
 
-        getDocInfo.add(createUser);
+        newUserLayout.setAutoCreateGaps(true);
+        newUserLayout.setAutoCreateContainerGaps(true);
+        newUserLayout.setHonorsVisibility(true);
+        newUserLayout.setHorizontalGroup(newUserLayout
+            .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addComponent(lastnameLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(lastnameNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addComponent(nameLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(nameNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addComponent(addressLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(addressNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addPreferredGap(addressNew, addressLabel1, LayoutStyle.ComponentPlacement.INDENT)
+                .addComponent(addressLabel1, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(addressVilleNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addPreferredGap(addressNew, addressLabel2, LayoutStyle.ComponentPlacement.INDENT)
+                .addComponent(addressLabel2, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(addressPaysNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addPreferredGap(addressNew, addressLabel3, LayoutStyle.ComponentPlacement.INDENT)
+                .addComponent(addressLabel3, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(addressComplementNew, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newUserLayout.createSequentialGroup()
+                .addComponent(reductionLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(reductionNew, 0, GroupLayout.DEFAULT_SIZE, 150))
+            .addComponent(createUser, 0, GroupLayout.DEFAULT_SIZE, 150));
 
-        createUserFrame.add(getDocInfo);
+        newUserLayout.setVerticalGroup(newUserLayout
+            .createSequentialGroup()
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(lastnameLabel)
+                    .addComponent(lastnameNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(nameLabel)
+                    .addComponent(nameNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(addressLabel)
+                    .addComponent(addressNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(addressLabel1)
+                    .addComponent(addressVilleNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(addressLabel2)
+                    .addComponent(addressPaysNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(addressLabel3)
+                    .addComponent(addressComplementNew))
+                .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(reductionLabel)
+                    .addComponent(reductionNew))
+                .addComponent(createUser));
+
+        createUserFrame.add(getUserInfo, BorderLayout.CENTER);
         createUserFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         createUserFrame.pack();
         createUserFrame.setVisible(true);
