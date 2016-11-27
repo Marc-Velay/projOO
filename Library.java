@@ -11,6 +11,7 @@ public class Library implements ActionListener {
     Dimension winDim;
     GroupLayout newDocLayout;
     GroupLayout newUserLayout;
+    GroupLayout newLoanLayout;
     JButton addDocBtn;
     JButton checkoutDocBtn;
     JButton createUserBtn;
@@ -28,6 +29,16 @@ public class Library implements ActionListener {
     JLabel catLabel;
 
     JButton checkout;
+    JButton searchDoc;
+    JButton searchUser;
+    JTextField authorField;
+    JTextField nameField;
+    JTextField userLNameField;
+    JTextField userNameField;
+    JLabel notFoundUser;
+    JLabel notFoundDoc;
+    JLabel foundDoc;
+    JLabel foundUser;
 
     JButton createUser;
     JTextField lastnameNew;
@@ -37,6 +48,9 @@ public class Library implements ActionListener {
     JTextField addressPaysNew;
     JTextField addressComplementNew;
     JTextField reductionNew;
+
+    String loanUserID;
+    String loanDocID;
     
     JFrame frame;
     JFrame newDocframe;
@@ -46,6 +60,7 @@ public class Library implements ActionListener {
 
     private static final String dbClassName = "org.sqlite.JDBC";
     private static final String LIBDB = "jdbc:sqlite:library.db";
+    private static final String warning = "<html><body>(Closing the window will cancel operation<br>and return you to the home screen)</body></html>";
     private Connection connLib = null;
     private Statement connStat = null;
 
@@ -61,8 +76,8 @@ public class Library implements ActionListener {
             try {
                 System.out.println("querying");
                 sql = "CREATE TABLE if not exists loanLibrary "+
-                " ( userID INTEGER, "+
-                " docID INTEGER, "+
+                " ( userID VARCHAR (255), "+
+                " docID VARCHAR (255), "+
                 " loanDate DATE, "+
                 " loanEnd DATE, "+
                 " loanReminderDate DATE, "+
@@ -78,7 +93,8 @@ public class Library implements ActionListener {
             }
             try {
                 sql = " CREATE TABLE if not exists userLibrary " +
-                " ( lastname VARCHAR(255), " + 
+                " (userID VARCHAR (255),"+ 
+                " lastname VARCHAR(255), " + 
                 " name VARCHAR(255), " +
                 " address VARCHAR(255), " + 
                 " inscriptiondate DATE, "+
@@ -300,8 +316,159 @@ public class Library implements ActionListener {
                         createNewDoc();
                 break; 
 
+            case "searchDoc":
+                        String docAuth = authorField.getText();
+                        String docName = nameField.getText();
+                        int nbRes =0;                        
+                            try {
+                            Class.forName(dbClassName).newInstance();
+                            connLib = DriverManager.getConnection(LIBDB);
+                            connLib.setAutoCommit(false);
+                            connStat = connLib.createStatement();
+                            try{
+                                if(docAuth != null) {
+                                    String req = "SELECT * FROM documentLibrary WHERE author LIKE '"+ docAuth +"%';";
+                                    ResultSet rs2 = connStat.executeQuery(req);
+                                    while(rs2.next()) nbRes++;
+                                    System.out.println(nbRes);
+                                    if(nbRes == 1) {
+                                        rs2 = connStat.executeQuery(req);
+                                        loanDocID = rs2.getString("code");
+                                        foundDoc.setVisible(true);
+                                        notFoundDoc.setVisible(false); 
+                                    } else if(docName != null){
+                                        nbRes =0;
+                                        req = "SELECT * FROM documentLibrary WHERE title LIKE '"+ docName +"%';";
+                                        rs2 = connStat.executeQuery(req);
+                                        while(rs2.next()) nbRes++;
+                                        System.out.println(nbRes);
+                                        if(nbRes == 1) {
+                                            rs2 = connStat.executeQuery(req);
+                                            loanDocID = rs2.getString("code");
+                                            foundDoc.setVisible(true);
+                                            notFoundDoc.setVisible(false); 
+                                        } else {
+                                            nbRes =0;
+                                            req = "SELECT * FROM documentLibrary WHERE title LIKE '"+ docName +"%' AND author LIKE '"+docAuth+"%';";
+                                            rs2 = connStat.executeQuery(req);
+                                            while(rs2.next()) nbRes++;
+                                            System.out.println(nbRes);
+                                            if(nbRes == 1) {
+                                                rs2 = connStat.executeQuery(req);
+                                                loanDocID = rs2.getString("code");
+                                                foundDoc.setVisible(true);
+                                                notFoundDoc.setVisible(false); 
+                                            } else {
+                                                foundDoc.setVisible(false);
+                                                notFoundDoc.setVisible(true);                                    
+                                            }
+                                        }
+                                    }
+                                } 
+                                checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                                checkoutFrame.setVisible(true);
+                            } catch (SQLException exc) {
+                                    System.out.println("SQLException: " + exc.getMessage());
+                                    System.out.println("SQLState: " + exc.getSQLState());
+                                    System.out.println("VendorError: " + exc.getErrorCode());
+                            }
+                        connStat.close();
+                        connLib.commit();
+                        connLib.close();
+                        } catch (Exception ex) {
+                            System.out.println(ex);
+                        }
+                        System.out.println("query completed");
+                        
+                break;
+
+            case "searchUser":                            
+                        String loanUserName = userNameField.getText();
+                        String loanUserLName = userLNameField.getText();
+                        nbRes =0;                        
+                            try {
+                            Class.forName(dbClassName).newInstance();
+                            connLib = DriverManager.getConnection(LIBDB);
+                            connLib.setAutoCommit(false);
+                            connStat = connLib.createStatement();
+                            try{
+                                if(loanUserLName != null) {
+                                    String requ = "SELECT * FROM userLibrary WHERE lastname LIKE '"+ loanUserLName +"%';";
+                                    ResultSet rs3 = connStat.executeQuery(requ);
+                                    while(rs3.next()) nbRes++;
+                                    System.out.println(nbRes);
+                                    if(nbRes == 1) {
+                                        rs3 = connStat.executeQuery(requ);
+                                        loanUserID = rs3.getString("userID");
+                                        foundUser.setVisible(true);
+                                        notFoundUser.setVisible(false); 
+                                    } else if(loanUserName != null){
+                                        nbRes =0;
+                                        requ = "SELECT * FROM userLibrary WHERE name LIKE '"+ loanUserName +"%';";
+                                        rs3 = connStat.executeQuery(requ);
+                                        while(rs3.next()) nbRes++;
+                                        System.out.println(nbRes);
+                                        if(nbRes == 1) {
+                                            rs3 = connStat.executeQuery(requ);
+                                            loanUserID = rs3.getString("userID");
+                                            foundUser.setVisible(true);
+                                            notFoundUser.setVisible(false); 
+                                        } else {
+                                            nbRes =0;
+                                            requ = "SELECT * FROM userLibrary WHERE lastname LIKE '"+ loanUserLName +"%' AND name LIKE '"+loanUserName+"%';";
+                                            rs3 = connStat.executeQuery(requ);
+                                            while(rs3.next()) nbRes++;
+                                            System.out.println(nbRes);
+                                            if(nbRes == 1) {
+                                                rs3 = connStat.executeQuery(requ);
+                                                loanUserID = rs3.getString("userID");
+                                                foundUser.setVisible(true);
+                                                notFoundUser.setVisible(false); 
+                                            } else {
+                                                foundUser.setVisible(false);
+                                                notFoundUser.setVisible(true);                                    
+                                            }
+                                        }
+                                    }
+                                } 
+                                checkoutFrame.setVisible(true);
+                            } catch (SQLException exc) {
+                                    System.out.println("SQLException: " + exc.getMessage());
+                                    System.out.println("SQLState: " + exc.getSQLState());
+                                    System.out.println("VendorError: " + exc.getErrorCode());
+                            }
+                        connStat.close();
+                        connLib.commit();
+                        connLib.close();
+                        } catch (Exception ex) {
+                            System.out.println(ex);
+                        }
+                        System.out.println("query completed");
+                break; 
+
             case "checkout":
                         checkoutFrame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
+                        
+                        String userLName = userLNameField.getText();
+                        String userName = userNameField.getText();
+                        try {
+                            Class.forName(dbClassName).newInstance();
+                            connLib = DriverManager.getConnection(LIBDB);
+                            connLib.setAutoCommit(false);
+                            connStat = connLib.createStatement();
+                            /*try{
+                                   
+                            } catch(SQLException exce) {
+                                System.out.println("SQLException: " + exce.getMessage());
+                                System.out.println("SQLState: " + exce.getSQLState());
+                                System.out.println("VendorError: " + exce.getErrorCode());
+                            }*/
+                            connStat.close();
+                            connLib.commit();
+                            connLib.close();
+                        } catch(Exception excep) {
+                            System.out.println(excep);
+                        }
                         System.out.println("checked out doc");
                 break;
 
@@ -322,21 +489,24 @@ public class Library implements ActionListener {
                             connLib.setAutoCommit(false);
                             connStat = connLib.createStatement();
                             try {
+                                ResultSet rs1 = connStat.executeQuery("SELECT Count(*) AS nbRow FROM userLibrary;");
+                                int rowsU = rs1.getInt("nbRow");
                                 Calendar cal = Calendar.getInstance();
                                 java.util.Date today = cal.getTime();
                                 cal.add(Calendar.YEAR, 1);
                                 java.util.Date renewaldate = cal.getTime();
-                                String sql = "INSERT INTO userLibrary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
+                                String sql = "INSERT INTO userLibrary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
                                 PreparedStatement ps = connLib.prepareStatement(sql);
-                                ps.setString(1, lastname);
-                                ps.setString(2, name);
-                                ps.setString(3, address);
-                                ps.setDate(4, new java.sql.Date(today.getTime()));
-                                ps.setDate(5, new java.sql.Date(renewaldate.getTime()));
-                                ps.setInt(6, 0);
+                                ps.setString(1, Integer.toHexString(rowsU));
+                                ps.setString(2, lastname);
+                                ps.setString(3, name);
+                                ps.setString(4, address);
+                                ps.setDate(5, new java.sql.Date(today.getTime()));
+                                ps.setDate(6, new java.sql.Date(renewaldate.getTime()));
                                 ps.setInt(7, 0);
                                 ps.setInt(8, 0);
-                                ps.setString(9, reduc);
+                                ps.setInt(9, 0);
+                                ps.setString(10, reduc);
                                 ps.executeUpdate();
 
                             } catch (SQLException exc) {
@@ -369,6 +539,7 @@ public class Library implements ActionListener {
 
         /************************** first line: doc type selection ***************************/
         JLabel rdBtnLabel = new JLabel("Select your document type: ");
+        JLabel docWarning = new JLabel(warning);
 
         JRadioButton bookRdBtn = new JRadioButton("Book");
         bookRdBtn.setActionCommand("bookRdBtn");
@@ -455,7 +626,8 @@ public class Library implements ActionListener {
                 .addComponent(legalLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(catLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(descNew, 0, GroupLayout.DEFAULT_SIZE, 300))
-            .addComponent(saveBook, 0, GroupLayout.DEFAULT_SIZE, 200));
+            .addComponent(saveBook, 0, GroupLayout.DEFAULT_SIZE, 200)
+            .addComponent(docWarning, 0, GroupLayout.DEFAULT_SIZE, 300));
 
         newDocLayout.setVerticalGroup(newDocLayout
             .createSequentialGroup()
@@ -481,7 +653,8 @@ public class Library implements ActionListener {
                     .addComponent(legalLabel)
                     .addComponent(catLabel)
                     .addComponent(descNew))
-                .addComponent(saveBook));
+                .addComponent(saveBook)
+                .addComponent(docWarning));
 
 
 
@@ -504,17 +677,100 @@ public class Library implements ActionListener {
         checkoutFrame.setMinimumSize(winDim);
         checkoutFrame.setLayout(new BorderLayout());
 
-        JPanel getDocInfo = new JPanel();
-        getDocInfo.setMinimumSize(winDim);
+        JPanel getLoanInfo = new JPanel();
+        getLoanInfo.setPreferredSize(winDim);
+        newLoanLayout = new GroupLayout(getLoanInfo);
+        getLoanInfo.setLayout(newLoanLayout);
+
+        JLabel docAuthor = new JLabel("Author of the document: ");
+        JLabel docName = new JLabel("Name of your document: ");
+        JLabel userLName = new JLabel("Enter the user's lastname: ");
+        JLabel userName = new JLabel(" Enter the user name: ");
+        foundDoc = new JLabel("Found! ");
+        foundDoc.setVisible(false);
+        notFoundDoc = new JLabel(" Please be more precise");
+        notFoundDoc.setVisible(false);
+        foundUser = new JLabel("Found! ");
+        foundUser.setVisible(false);
+        notFoundUser = new JLabel(" Please be more precise");
+        notFoundUser.setVisible(false);
+        JLabel loanWarning = new JLabel(warning);
+
+        searchDoc = new JButton("search for doc");
+        searchDoc.setPreferredSize(new Dimension(60, 300));
+        searchDoc.setActionCommand("searchDoc");
+        searchDoc.addActionListener(this);
+
+        searchUser = new JButton("Search for user");
+        searchUser.setPreferredSize(new Dimension(60, 300));
+        searchUser.setActionCommand("searchUser");
+        searchUser.addActionListener(this);
+
+        authorField = new JTextField(30);
+        nameField = new JTextField(30);
+        userLNameField = new JTextField(30);
+        userNameField = new JTextField(30);
 
         checkout = new JButton("checkout document");
-        checkout.setMinimumSize(new Dimension(60, 50));
+        checkout.setPreferredSize(new Dimension(60, 50));
         checkout.setActionCommand("checkout");
         checkout.addActionListener(this);
 
-        getDocInfo.add(checkout);
+        newLoanLayout.setAutoCreateGaps(true);
+        newLoanLayout.setAutoCreateContainerGaps(true);
+        newLoanLayout.setHonorsVisibility(true);
+        newLoanLayout.setHorizontalGroup(newLoanLayout
+            .createParallelGroup(GroupLayout.Alignment.LEADING, false)
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(docAuthor, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(authorField, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(docName, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(nameField, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(searchDoc, 200, GroupLayout.DEFAULT_SIZE, 200)
+                .addComponent(foundDoc, 0, GroupLayout.DEFAULT_SIZE, 200)
+                .addComponent(notFoundDoc, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(userLName, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(userLNameField, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(userName, 0, GroupLayout.DEFAULT_SIZE, 200)  
+                .addComponent(userNameField, 0, GroupLayout.DEFAULT_SIZE, 200))
+            .addGroup(newLoanLayout.createSequentialGroup()
+                .addComponent(searchUser, 200, GroupLayout.DEFAULT_SIZE, 200)
+                .addComponent(foundUser, 0, GroupLayout.DEFAULT_SIZE, 200)
+                .addComponent(notFoundUser, 0, GroupLayout.DEFAULT_SIZE, 200))         
+            .addComponent(checkout, 0, GroupLayout.DEFAULT_SIZE, 200)         
+            .addComponent(loanWarning, 0, GroupLayout.DEFAULT_SIZE, 300));
 
-        checkoutFrame.add(getDocInfo);
+        newLoanLayout.setVerticalGroup(newLoanLayout
+            .createSequentialGroup()
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(docAuthor)
+                    .addComponent(authorField))
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(docName)
+                    .addComponent(nameField))
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(searchDoc)
+                    .addComponent(foundDoc)
+                    .addComponent(notFoundDoc))
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(userLName)
+                    .addComponent(userLNameField))
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(userName)
+                    .addComponent(userNameField))
+                .addGroup(newLoanLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                    .addComponent(searchUser)
+                    .addComponent(foundUser)
+                    .addComponent(notFoundUser))
+                .addComponent(checkout)
+                .addComponent(loanWarning));
+
+
+        checkoutFrame.add(getLoanInfo, BorderLayout.CENTER);
         checkoutFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         checkoutFrame.pack();
         checkoutFrame.setVisible(true);
@@ -545,6 +801,7 @@ public class Library implements ActionListener {
         JLabel addressLabel2 = new JLabel("* Pays: ");
         JLabel addressLabel3 = new JLabel("Complement: ");
         JLabel reductionLabel = new JLabel("Reduction code: ");
+        JLabel userWarning = new JLabel(warning);
 
         lastnameNew = new JTextField(30);
         nameNew = new JTextField(30);
@@ -552,7 +809,7 @@ public class Library implements ActionListener {
         addressVilleNew = new JTextField(30);
         addressPaysNew = new JTextField(30);
         addressComplementNew = new JTextField(30);
-        reductionNew = new JTextField(50);
+        reductionNew = new JTextField(30);
 
         createUser = new JButton("create account");
         createUser.setPreferredSize(new Dimension(60, 50));
@@ -588,7 +845,8 @@ public class Library implements ActionListener {
             .addGroup(newUserLayout.createSequentialGroup()
                 .addComponent(reductionLabel, 0, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(reductionNew, 0, GroupLayout.DEFAULT_SIZE, 150))
-            .addComponent(createUser, 0, GroupLayout.DEFAULT_SIZE, 150));
+            .addComponent(createUser, 0, GroupLayout.DEFAULT_SIZE, 200)
+            .addComponent(userWarning, 0, GroupLayout.DEFAULT_SIZE, 300));
 
         newUserLayout.setVerticalGroup(newUserLayout
             .createSequentialGroup()
@@ -613,7 +871,8 @@ public class Library implements ActionListener {
                 .addGroup(newUserLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(reductionLabel)
                     .addComponent(reductionNew))
-                .addComponent(createUser));
+                .addComponent(createUser)
+                .addComponent(userWarning));
 
         createUserFrame.add(getUserInfo, BorderLayout.CENTER);
         createUserFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
